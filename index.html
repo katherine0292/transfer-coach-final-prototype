@@ -86,6 +86,30 @@ function fill(h,v,fns){
   h=h.replace(/(on[A-Z]\w*)="\{\{\s*([\w.]+)\s*\}\}"/g,(m,ev,p)=>{fns.push(get(v,p));return 'data-fn="'+(fns.length-1)+'"'});
   return h.replace(/\{\{\s*([\w.]+)\s*\}\}/g,(m,p)=>{const x=get(v,p);return x==null?'':String(x)});
 }
+function makeSheet(ph){
+  const sh=ph.querySelector('.sheet'),map=sh&&sh.previousElementSibling;
+  if(!map||getComputedStyle(map).flexShrink!=='0')return;
+  const MAX=map.offsetHeight,MIN=72;let h=MAX,y0=null,moved=0,drag=false;
+  const set=(v,anim)=>{h=Math.max(MIN,Math.min(MAX,v));map.style.transition=anim?'height .32s cubic-bezier(.2,.8,.2,1),flex-basis .32s':'none';map.style.height=h+'px';const pill=map.lastElementChild;if(pill&&pill.tagName==='DIV'){pill.style.transition='opacity .2s';pill.style.opacity=h>MAX-70?1:0}};
+  const snap=to=>set(to==null?(h>(MIN+MAX)/2?MAX:MIN):to,true);
+  const start=y=>{y0=y;moved=0;drag=true};
+  const move=(y,e)=>{
+    if(!drag)return;const dy=y-y0;y0=y;moved+=Math.abs(dy);
+    const top=sh.scrollTop<=0;
+    if(dy<0&&h>MIN){set(h+dy);e.cancelable&&e.preventDefault()}
+    else if(dy>0&&top&&h<MAX){set(h+dy);e.cancelable&&e.preventDefault()}
+  };
+  const end=()=>{if(drag){drag=false;if(h>MIN&&h<MAX)snap()}};
+  sh.addEventListener('touchstart',e=>start(e.touches[0].clientY),{passive:true});
+  sh.addEventListener('touchmove',e=>move(e.touches[0].clientY,e),{passive:false});
+  sh.addEventListener('touchend',end);sh.addEventListener('touchcancel',end);
+  sh.addEventListener('mousedown',e=>{if(e.target.closest('a,button'))return;start(e.clientY);
+    const mm=ev=>move(ev.clientY,ev),mu=()=>{removeEventListener('mousemove',mm);removeEventListener('mouseup',mu);end()};
+    addEventListener('mousemove',mm);addEventListener('mouseup',mu)});
+  const grab=sh.firstElementChild;
+  if(grab){grab.style.cssText+=';padding:10px 60px;margin:-10px 0;cursor:grab;box-sizing:content-box;background-clip:content-box';
+    grab.addEventListener('click',()=>{if(moved<6)snap(h>MIN?MIN:MAX)})}
+}
 function makeScrollable(ph){
   const c=[...ph.querySelectorAll('div')].filter(e=>getComputedStyle(e).overflowY==='hidden'&&parseFloat(getComputedStyle(e).flexGrow)>0&&e.scrollHeight>e.clientHeight+2);
   c.filter(e=>!c.some(o=>o!==e&&o.contains(e))).forEach(e=>e.classList.add('scrollbody'));
@@ -97,7 +121,7 @@ function render(n,keep){
   h=h.replace(/<sc-if value="\{\{\s*([\w.]+)\s*\}\}"[^>]*>([\s\S]*?)<\/sc-if>/g,(m,p,inner)=>get(v,p)?inner:'');
   h=fill(h,v,fns);
   const ph=document.getElementById('phone');
-  ph.innerHTML=h; makeScrollable(ph); document.title='Transfer Coach · '+C[n].title.replace(/^\S+\s/,'');
+  ph.innerHTML=h; makeScrollable(ph); makeSheet(ph); document.title='Transfer Coach · '+C[n].title.replace(/^\S+\s/,'');
   if(keep) ph.querySelectorAll('.rise,.sheet,.mapin,.grow,.draw').forEach(e=>e.style.animation='none');
   ph.querySelectorAll('[data-fn]').forEach(el=>{const f=fns[+el.dataset.fn];el.addEventListener('click',e=>{if(typeof f==='function')f()})});
   ph.querySelectorAll('a[href$=".dc.html"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();setTimeout(()=>{location.hash='#/'+a.getAttribute('href').replace('.dc.html','')},0)}));
