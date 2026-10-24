@@ -44,13 +44,13 @@ button{font:inherit;color:inherit;margin:0}
 @keyframes mapin{from{transform:scale(1.06);opacity:.6}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion: reduce){.here,.runpulse,.livedot,.tip::after,.rise,.grow,.draw,.glow::before,.sheet,.mapin{animation:none}.draw{stroke-dashoffset:0}}
 
-html,body{height:100%}
-.scrollbody{overflow-y:auto!important;overflow-x:hidden!important;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+.scrollbody{overflow-y:auto!important;overflow-x:hidden!important;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:none;padding-bottom:16px!important;box-sizing:border-box}
 .scrollbody::-webkit-scrollbar{display:none}
 button,a,[data-fn]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 body{background:#DCD9D1;display:flex;align-items:center;justify-content:center;font-family:'Geist',ui-sans-serif,system-ui,sans-serif}
 #phone{width:390px;height:844px;border-radius:44px;overflow:hidden;box-shadow:0 0 0 10px #11191B,0 40px 80px -20px rgba(0,0,0,.45);position:relative;background:#F3F2EE}
-@media (max-width:500px){body{background:#F3F2EE;align-items:flex-start}#phone{border-radius:0;box-shadow:none;width:100vw;height:100dvh}#phone>div{width:100%!important;height:100%!important}}
+@media (max-width:500px){html,body{position:fixed;inset:0;width:100%;touch-action:none}body{background:#F3F2EE;align-items:flex-start}#phone{border-radius:0;box-shadow:none;width:100vw;height:100dvh}#phone>div{width:100%!important;height:100%!important}}
 </style>
 </head>
 <body>
@@ -87,7 +87,7 @@ function fill(h,v,fns){
   return h.replace(/\{\{\s*([\w.]+)\s*\}\}/g,(m,p)=>{const x=get(v,p);return x==null?'':String(x)});
 }
 function makeScrollable(ph){
-  const c=[...ph.querySelectorAll('div')].filter(e=>getComputedStyle(e).overflowY==='hidden'&&e.scrollHeight>e.clientHeight+2);
+  const c=[...ph.querySelectorAll('div')].filter(e=>getComputedStyle(e).overflowY==='hidden'&&parseFloat(getComputedStyle(e).flexGrow)>0&&e.scrollHeight>e.clientHeight+2);
   c.filter(e=>!c.some(o=>o!==e&&o.contains(e))).forEach(e=>e.classList.add('scrollbody'));
 }
 function render(n,keep){
